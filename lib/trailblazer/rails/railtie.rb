@@ -4,7 +4,20 @@ require "trailblazer/loader"
 module Trailblazer
   class Railtie < ::Rails::Railtie
     def self.load_concepts(app)
-      Loader.new.(insert: [ModelFile, before: Loader::AddConceptFiles]) { |file| require_dependency("#{app.root}/#{file}") }
+      engines = ::Rails::Engine.subclasses.map(&:instance)
+      engines.each do |engine|
+        Dir.chdir(engine.root) do # Loader has no concept for base dir, must chdir so that it can find files
+          Loader.new.({debug: false, insert: [ModelFile, before: Loader::AddConceptFiles]}) { |file|
+            require_dependency("#{engine.root}/#{file}")
+          }
+        end
+      end
+
+      Dir.chdir(app.root) do  # necessary to guarantee context for tests
+        Loader.new.({debug: false, insert: [ModelFile, before: Loader::AddConceptFiles]}) { |file|
+          require_dependency("#{app.root}/#{file}")
+        }
+      end
     end
 
     # This is to autoload Operation::Dispatch, etc. I'm simply assuming people find this helpful in Rails.
