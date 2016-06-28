@@ -8,7 +8,8 @@ module Trailblazer
       engines.each do |engine|
         Dir.chdir(engine.root) do # Loader has no concept for base dir, must chdir so that it can find files
           Loader.new.({debug: false, insert: [ModelFile, before: Loader::AddConceptFiles]}) { |file|
-            require_dependency("#{engine.root}/#{file}")
+            root = engine.root.to_s.include?('dummy') ? engine.root.to_s.gsub('spec/dummy', '') : engine.root
+            require_dependency("#{root}/#{file}")
           }
         end
       end
